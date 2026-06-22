@@ -1,0 +1,37 @@
+import rasterio 
+import matplotlib.pyplot as plt
+import numpy as np 
+import os 
+
+dtm_data = rasterio.open(os.path.join(r"...\data_in.tif"))
+
+n_points = 200 #the higher the number, the more accurate it is. 
+
+#coordinates are in GKX in GKY [GK48] or in Gauß-Krüger coordinate system in Slovenia. For example you have written some numbers!
+y_start, x_start = 470984, 122486 
+y_end, x_end = 471130, 118663
+
+x_line = np.linspace(x_start, x_end, n_points) 
+y_line = np.linspace(y_start, y_end, n_points)
+
+elevation = []
+for x, y in zip(x_line, y_line):
+    row, col = dtm_data.index(x, y)
+    z = dtm_data.read(1)[row, col]
+    elevation.append(z)
+
+elevation = np.array(elevation)
+
+distance = np.sqrt((x_line - x_start)**2 + (y_line - y_start)**2)
+
+#some information from line
+print("Start [X], [Y]:", x_start, y_start, "start elevation: ", elevation[0])
+print("Start distance: ", distance[0], "meters", "---", "End distance: ", distance[-1], "meters")
+print("End [X], [Y]:", x_end, y_end, "end elevation: ", elevation[-1])
+print("Highest elevation: ", elevation.max())
+print("Lowest elevation: ", elevation.min())
+
+fig, (ax1) = plt.subplots(1, figsize=(12, 2))
+ax1.plot(distance, elevation, color="red")
+ax1.set_title("Elevation Profile")
+ax1.set_xlabel("Distance (m)")  
