@@ -10,6 +10,8 @@ n_points = 200
 x_start, y_start = 470984, 122486
 x_end, y_end = 471130, 118663
 
+
+#line 
 x_line = np.linspace(x_start, x_end, n_points)
 y_line = np.linspace(y_start, y_end, n_points)
 
@@ -21,11 +23,10 @@ for x, y in zip(x_line, y_line):
 
 elevation = np.array(elevation)
 distance = np.sqrt((x_line - x_start)**2 + (y_line - y_start)**2)
-
-#information for start and end for ax2
 start_distance = distance[0]
 finish_distance = distance[-1]
 
+#DTM data
 ext = [
     dtm_data.bounds.left,
     dtm_data.bounds.right,
@@ -40,6 +41,7 @@ print("End [X], [Y]:", x_end, y_end, "end elevation: ", elevation[-1])
 print("Highest elevation: ", elevation.max())
 print("Lowest elevation: ", elevation.min())
 
+#show elevation and distance
 fig, (ax1) = plt.subplots(1, figsize=(12, 2))
 ax1.plot(distance, elevation, color="black")
 ax1.plot([start_distance], [elevation[0]], marker="o", markersize=4, color="green")
@@ -52,6 +54,7 @@ band = dtm_data.read(1)
 nodata = dtm_data.nodata
 band_masked = np.ma.masked_equal(band, nodata) if nodata is not None else np.ma.masked_invalid(band)  #--> solve the shit about DTM shit data! 
 
+#show DTM data with black line (from where is line showing)
 fig, ax2 = plt.subplots(1, figsize=(12, 9))
 img = ax2.imshow(
     band_masked,
