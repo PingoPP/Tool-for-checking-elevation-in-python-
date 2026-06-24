@@ -3,28 +3,37 @@ import matplotlib.pyplot as plt
 import numpy as np 
 import os 
 
-dtm_data = rasterio.open(os.path.join(r"...\data_in.tif"))
+dtm_data = rasterio.open(os.path.join(r"your_data.tif"))
 
-n_points = 200 #the higher the number, the more accurate it is. 
+n_points = 200
+#Gauß-Krüger coordinate system [GK48]! source:http://gis.arso.gov.si/atlasokolja/profile.aspx?id=Atlas_Okolja_AXL@Arso
+x_start, y_start = 470984, 122486
+x_end, y_end = 471130, 118663
 
-#coordinates are in GKX in GKY [GK48] or in Gauß-Krüger coordinate system in Slovenia. For example you have written some numbers!
-y_start, x_start = 470984, 122486 
-y_end, x_end = 471130, 118663
-
-x_line = np.linspace(x_start, x_end, n_points) 
+x_line = np.linspace(x_start, x_end, n_points)
 y_line = np.linspace(y_start, y_end, n_points)
 
 elevation = []
+band = dtm_data.read(1)
 for x, y in zip(x_line, y_line):
     row, col = dtm_data.index(x, y)
-    z = dtm_data.read(1)[row, col]
-    elevation.append(z)
+    elevation.append(band[row, col])
 
 elevation = np.array(elevation)
-
 distance = np.sqrt((x_line - x_start)**2 + (y_line - y_start)**2)
 
-#some information from line
+#information for start and end for ax2
+start_distance = distance[0]
+finish_distance = distance[-1]
+
+ext = [
+    dtm_data.bounds.left,
+    dtm_data.bounds.right,
+    dtm_data.bounds.bottom,
+    dtm_data.bounds.top
+]
+
+#some information because I am autistic
 print("Start [X], [Y]:", x_start, y_start, "start elevation: ", elevation[0])
 print("Start distance: ", distance[0], "meters", "---", "End distance: ", distance[-1], "meters")
 print("End [X], [Y]:", x_end, y_end, "end elevation: ", elevation[-1])
@@ -32,6 +41,32 @@ print("Highest elevation: ", elevation.max())
 print("Lowest elevation: ", elevation.min())
 
 fig, (ax1) = plt.subplots(1, figsize=(12, 2))
-ax1.plot(distance, elevation, color="red")
+ax1.plot(distance, elevation, color="black")
+ax1.plot([start_distance], [elevation[0]], marker="o", markersize=4, color="green")
+ax1.plot([finish_distance], [elevation[-1]], marker="o", markersize=4, color="red")
 ax1.set_title("Elevation Profile")
-ax1.set_xlabel("Distance (m)")  
+ax1.set_xlabel("Distance (m)")
+ax1.set_ylabel("Elevation (m)")
+
+band = dtm_data.read(1)
+nodata = dtm_data.nodata
+band_masked = np.ma.masked_equal(band, nodata) if nodata is not None else np.ma.masked_invalid(band)  #--> solve the shit about DTM shit data! 
+
+fig, ax2 = plt.subplots(1, figsize=(12, 9))
+img = ax2.imshow(
+    band_masked,
+    cmap="turbo",
+    extent=ext,
+    origin="upper"
+)
+fig.colorbar(img, ax=ax2, label="Elevation (m)")
+ax2.set_title("Digital Terrain Model (DTM)")
+ax2.set_xlabel("X")
+ax2.set_ylabel("Y")
+ax2.plot([x_start, x_end], [y_start, y_end], linewidth=2, label='Profile Line', color="black")
+ax2.plot(x_start, y_start, marker="o", markersize=4, color="green", label='Start')
+ax2.plot(x_end, y_end, marker="o", markersize=4, color="red", label='End')
+ax2.legend()
+
+
+plt.show()
